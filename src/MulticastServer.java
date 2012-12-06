@@ -97,9 +97,9 @@ public class MulticastServer
 		}
 	}
 	
-	private void sendMessage(MulticastSocket socket, String data)
+	private void sendMessage(byte type, String dest, MulticastSocket socket, String data)
 	{
-		
+		byte[] buffer;
 		
 		
 	}
