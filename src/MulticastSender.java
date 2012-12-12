@@ -12,7 +12,7 @@ import java.net.MulticastSocket;
  * Client 
  * Skeleton code for Multicast client
  */
-public class MulticastClient {
+public class MulticastSender {
 	
 	public static final String MCAST_ADDR = "230.0.0.1"; // hardcoded address for the multicast group
 	public static final int MCAST_PORT = 9013; // hardcoded port number for the multicast group
@@ -28,7 +28,7 @@ public class MulticastClient {
 	 * 
 	 * Fills an instance with the hardcoded values
 	 */
-	public MulticastClient() {
+	public MulticastSender() {
 		this(MCAST_ADDR, MCAST_PORT);
 	}
 	
@@ -41,7 +41,7 @@ public class MulticastClient {
 	 * @param addr Address of the multicast group as string
 	 * @param port Port number of the server 
 	 */
-	public MulticastClient(String addr, int port) {
+	public MulticastSender(String addr, int port) {
 		try {
 			this.port= port;
 			address = InetAddress.getByName(addr);
@@ -94,36 +94,16 @@ public class MulticastClient {
 		}
 	}
 	
-	
-	/**
-	 * Main method
-	 * Start a client by creating an instance of the class MulticastClient.
-	 * 
-	 * @param args 	[0] IP address the client should send to 
-	 * 				[1] Port number the client should send to
-	 */
-	public static void main(String[] args) {
-		int port= 0;
-		String address=null;
-		MulticastClient client=null;
+	private void sendMessage(byte type, String dest, MulticastSocket socket, String data)
+	{
+		byte[] buffer;
 		
-		System.out.println("Program start");
-		try {
-			if (args.length==2) {
-				address= args[0];
-				port= Integer.parseInt(args[1]);
-				
-				client= new MulticastClient(address, port);
-			}
-		else
-			client= new MulticastClient();
 		
-		client.run();
-		}	
-		catch(Exception e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-		System.out.println("Program end");
 	}
+	
+	public void queueMessage(byte type, String dest, MulticastSocket socket, String data)
+	{
+		
+	}
+	
 }

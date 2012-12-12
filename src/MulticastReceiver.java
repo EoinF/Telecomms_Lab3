@@ -13,7 +13,7 @@ import java.util.Date;
  * Server 
  * Skeleton code for Multicast server
  */
-public class MulticastServer 
+public class MulticastReceiver
 {
 	
 	public static final String MCAST_ADDR = "230.0.0.1";	// Hardcoded address for the multicast group
@@ -30,7 +30,7 @@ public class MulticastServer
 	 * 
 	 * Fills an instance with the hardcoded values
 	 */
-	public MulticastServer() {
+	public MulticastReceiver() {
 		this(MCAST_ADDR, MCAST_PORT);
 	}
 	
@@ -43,7 +43,7 @@ public class MulticastServer
 	 * @param addr Address of the multicast group as string
 	 * @param port Port number of the server 
 	 */
-	public MulticastServer(String addr, int port) 
+	public MulticastReceiver(String addr, int port) 
 	{
 		try
 		{
@@ -95,46 +95,6 @@ public class MulticastServer
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-	}
-	
-	private void sendMessage(byte type, String dest, MulticastSocket socket, String data)
-	{
-		byte[] buffer;
-		
-		
-	}
-	
-	/**
-	 * Main method
-	 * Starts a server application by creating an instance of 
-	 * the class MulticastServer.
-	 * 
-	 * @param args  [0] IP address the server should bind to 
-	 * 				[1] Port number the server should bind to
-	 */
-	public static void main(String[] args) {
-		int port= 0;
-		String address=null;
-		MulticastServer server=null;
-		
-		System.out.println("Program start");
-		try {
-			if (args.length==2) {
-				address= args[0];
-				port= Integer.parseInt(args[1]);
-				
-				server= new MulticastServer(address, port);
-				}
-			else
-				server= new MulticastServer();
-		
-			server.run();
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-		System.out.println("Program end");
 	}
 	
 }
