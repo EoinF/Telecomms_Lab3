@@ -92,9 +92,10 @@ public class MulticastSender {
 				case 0://End the program
 					break;
 				case 1://Connect to the multicast server
-					//sendMessage(0, input, socket, input);
+					
 					break;
 				case 2://Send a command
+					//sendMessage(0, input, socket, input);
 					break;
 				default://Not a valid command
 					System.out.print("This is not a valid option.\n");
