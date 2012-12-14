@@ -4,6 +4,8 @@
  * Name3 StudentNumber3
  */
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -66,6 +68,10 @@ public class MulticastSender {
 		String msg = "Date?";
 		byte[] buffer;
 		DatagramPacket packet = null;
+		InputStreamReader converter = new InputStreamReader(System.in);
+		BufferedReader in = new BufferedReader(converter);
+		String input = "";
+		int ans = 0;
 		
 		try {
 			
@@ -75,18 +81,28 @@ public class MulticastSender {
 			socket.send(packet);
 			System.out.println("Send Msg");
 			
-			// wait for incoming datagrams and print their content
-			while (true) {
-				System.out.println("Waiting");
+			do{
 				
-				buffer = new byte[MAX_BUFFER];
-				packet = new DatagramPacket(buffer, buffer.length);
-				socket.receive(packet);
-				buffer= packet.getData();
-				System.out.println("Received: " + 
-						new String(buffer, 0, packet.getLength()));
-				System.out.println("From: "+packet.getAddress()+":"+packet.getPort());
-			}
+				System.out.print("0) End the program.\n1) Connect to the system.\n 2) Send a Command\n");
+				input = in.readLine();//Input command.
+				ans = Integer.parseInt(input);
+
+				switch(ans){
+
+				case 0://End the program
+					break;
+				case 1://Connect to the multicast server
+					//sendMessage(0, input, socket, input);
+					break;
+				case 2://Send a command
+					break;
+				default://Not a valid command
+					System.out.print("This is not a valid option.\n");
+					break;
+					
+				}
+				
+			}while(ans != 0);
 			
 		} catch(Exception e) {
 			e.printStackTrace();
