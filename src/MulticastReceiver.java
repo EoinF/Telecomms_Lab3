@@ -13,7 +13,7 @@ import java.util.Date;
  * Server 
  * Skeleton code for Multicast server
  */
-public class MulticastReceiver
+public class MulticastReceiver implements Runnable
 {
 	
 	public static final String MCAST_ADDR = "230.0.0.1";	// Hardcoded address for the multicast group
@@ -70,6 +70,24 @@ public class MulticastReceiver
 		byte[] buffer= null;
 		String msg= null;
 		
+		
+		/*
+			Firstly, an UPDATE command is sent to the multicast group
+			If there are users already connected, an UPDATE command should be returned
+			If this program receives an UPDATE command it should set isConnected to true
+			
+			If the username entered is already in use, a REJECT command should be used
+			
+			NOTE: We can't actually find our own ip address as seen from outside the local network
+			due to NAT translation. This address is discovered, however, when the first UPDATE command is received
+			containing the list of nodes in the network. If there is a user with the same username, then the REJECT
+			command should be returned. Otherwise it's impossible to tell your own address from theirs
+		*/
+		
+		
+		//Make sure this program can't receive its own commands
+		
+		
 		try {
 			while (true) {
 				System.out.println("Waiting");
@@ -78,7 +96,11 @@ public class MulticastReceiver
 				buffer = new byte[MAX_BUFFER];
 				packet = new DatagramPacket(buffer, buffer.length);
 				socket.receive(packet);
-				msg= new String(buffer, 0, packet.getLength());
+				
+				
+				msg= new String(buffer, MulticastPeer.HEADER_SIZE, packet.getLength());
+				
+				
 				System.out.println("Received: " + msg);
 				System.out.println("From: " + packet.getAddress() + ":" + packet.getPort());
 				
