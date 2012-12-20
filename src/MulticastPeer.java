@@ -79,7 +79,7 @@ public class MulticastPeer {
 		}
 		System.out.println("Program end");
 	}
-	
+
 	public static String getNodeList()
 	{
 		StringBuilder nodestext = new StringBuilder();
@@ -93,5 +93,39 @@ public class MulticastPeer {
 		}
 		
 		return nodestext.toString();
+	}
+	
+	public static ArrayList<Node> stringToNodeList(String input)
+	{
+		ArrayList<Node> nodelist = new ArrayList<Node>();
+		String[] nodes_txt = input.split(",");
+		
+		for (int i = 0; i < nodes_txt.length; i++)
+		{
+			String[] properties = nodes_txt[i].split(":");
+			nodelist.add(new Node(properties[0], properties[1]));
+		}
+		
+		return nodelist;
+	}
+	
+	public void mergeLists(ArrayList<Node> newnodes)
+	{
+		for (int i = 0; i < newnodes.size(); i++)
+		{
+			//If the node doesn't already exist, then add it
+			if (!nodeExists(newnodes.get(i)))
+				Nodes.add(newnodes.get(i));
+		}
+	}
+	
+	private boolean nodeExists(Node n)
+	{
+		for (int i = 0; i < Nodes.size(); i++)
+		{
+			if (Nodes.get(i).equals(n))
+				return true;
+		}
+		return false;
 	}
 }
