@@ -22,6 +22,7 @@ public class MulticastPeer {
 	public static ArrayList<Node> Nodes;
 	public static Node MyNode;
 	public static boolean isConnected = false;
+	public static String MyName = "";
 	
 	/**
 	 * Main method
@@ -68,6 +69,7 @@ public class MulticastPeer {
 			
 			MyNode = new Node(name, "");
 			Nodes.add(MyNode);
+			MyName = name;
 			
 			(new Thread(receiver)).start();
 			client.run();
@@ -109,7 +111,7 @@ public class MulticastPeer {
 		return nodelist;
 	}
 	
-	public void mergeLists(ArrayList<Node> newnodes)
+	public static void mergeLists(ArrayList<Node> newnodes)
 	{
 		for (int i = 0; i < newnodes.size(); i++)
 		{
@@ -119,7 +121,7 @@ public class MulticastPeer {
 		}
 	}
 	
-	private boolean nodeExists(Node n)
+	private static boolean nodeExists(Node n)
 	{
 		for (int i = 0; i < Nodes.size(); i++)
 		{

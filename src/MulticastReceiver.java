@@ -4,6 +4,7 @@
  * Name3 StudentNumber3
  */
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -96,10 +97,7 @@ public class MulticastReceiver implements Runnable
 				buffer = new byte[MAX_BUFFER];
 				packet = new DatagramPacket(buffer, buffer.length);
 				socket.receive(packet);
-				
-				
 				msg= new String(buffer, MulticastPeer.HEADER_SIZE, packet.getLength());
-				
 				
 				System.out.println("Received: " + msg);
 				System.out.println("From: " + packet.getAddress() + ":" + packet.getPort());
@@ -113,10 +111,67 @@ public class MulticastReceiver implements Runnable
 					System.out.println("Sending: " + new String(buffer));
 					socket.send(packet);
 				}
+				
+				//Depending on the header of the msg, do one of the below:
+				switch((int)(buffer[0])){
+				case ((int)MulticastPeer.ACK):
+					//Here just so it doesn't activate default class.
+					//Here for if it receives some random ACK meant for someone else.
+					break;
+					
+				case ((int)MulticastPeer.TEST):
+					System.out.print("TEST.\n");
+					break;
+					
+				case ((int)MulticastPeer.REJECT):
+					System.out.print("REJECT.\n");
+					break;
+					
+				case ((int)MulticastPeer.LEAVE):
+					System.out.print("LEAVE.\n");
+					break;
+					
+				case ((int)MulticastPeer.UPDATE):
+					Update(msg);
+					System.out.print("UPDATE.\n");
+					break;
+					
+				case ((int)MulticastPeer.REQUEST):
+					
+					MulticastPeer.stringToNodeList(msg);
+					
+					System.out.print("REQUEST.\n");
+					break;
+					
+				default:
+					System.out.print("Not a valid command. Error has occured. (Blame Troy)");
+					break;
+				}
+					
 			}				
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
+	
+public void Update(String message){//Update the NodeList
+	
+	try{
+		if(!message.equals(MulticastPeer.getNodeList()))
+		{//If the message sent does not match the the Node list that you have, then update your list.
+			MulticastPeer.mergeLists(MulticastPeer.stringToNodeList(message));
+			byte[] buffer = new byte[MAX_BUFFER];//Craete a buffer.
+			DatagramPacket packet = new DatagramPacket(buffer, buffer.length);//Create a packet
+			
+			//socket.setSoTimeout(1000);//set socket to stop receiving after x milliseconds.(This causes the exception)
+			
+			for(int i = 1; i <= MulticastPeer.Nodes.size(); i++){//i = 1, because it had to receive the first to start this up.
+				socket.receive(packet);
+			}
+			
+		}
+	}catch(Exception e){
+	}
+}
 	
 }
