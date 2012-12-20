@@ -22,7 +22,6 @@ public class MulticastPeer {
 	public static ArrayList<Node> Nodes;
 	public static Node MyNode;
 	public static boolean isConnected = false;
-	public static String MyName = "";
 	
 	/**
 	 * Main method
@@ -69,7 +68,6 @@ public class MulticastPeer {
 			
 			MyNode = new Node(name, "");
 			Nodes.add(MyNode);
-			MyName = name;
 			
 			(new Thread(receiver)).start();
 			client.run();
@@ -109,6 +107,20 @@ public class MulticastPeer {
 		}
 		
 		return nodelist;
+	}
+	
+	public static void DeleteNode(String input){
+		//Will find the node of the person that left the group, and delete their node.
+		String[] nodes_txt = input.split(":");
+		boolean found = false;
+		for(int i = 0; i < Nodes.size() && !found; i++)
+		{//Check the nodes for the persons name who left.
+			if(input.equals(Nodes.get(i).name))//Once found, delete his node.
+			{
+				found = true;
+				Nodes.remove(i);//Remove the Node.
+			}
+		}
 	}
 	
 	public static void mergeLists(ArrayList<Node> newnodes)

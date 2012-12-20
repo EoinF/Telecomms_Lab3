@@ -128,6 +128,7 @@ public class MulticastReceiver implements Runnable
 					break;
 					
 				case ((int)MulticastPeer.LEAVE):
+					MulticastPeer.DeleteNode(msg);
 					System.out.print("LEAVE.\n");
 					break;
 					
@@ -137,9 +138,6 @@ public class MulticastReceiver implements Runnable
 					break;
 					
 				case ((int)MulticastPeer.REQUEST):
-					
-					MulticastPeer.stringToNodeList(msg);
-					
 					System.out.print("REQUEST.\n");
 					break;
 					
@@ -165,7 +163,7 @@ public void Update(String message){//Update the NodeList
 			
 			//socket.setSoTimeout(1000);//set socket to stop receiving after x milliseconds.(This causes the exception)
 			
-			for(int i = 1; i <= MulticastPeer.Nodes.size(); i++){//i = 1, because it had to receive the first to start this up.
+			for(int i = 1; i < MulticastPeer.Nodes.size(); i++){//i = 1, because it had to receive the first to start this up.
 				socket.receive(packet);
 			}
 			
