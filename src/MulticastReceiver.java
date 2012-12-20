@@ -90,7 +90,7 @@ public class MulticastReceiver implements Runnable
 		
 		try {
 			while (true) {
-				System.out.println("Waiting");
+				System.out.println("Waiting Receiver.");
 				
 				// receive message from client
 				buffer = new byte[MAX_BUFFER];
