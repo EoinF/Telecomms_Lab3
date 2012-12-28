@@ -115,7 +115,7 @@ public class MulticastPeer {
 		boolean found = false;
 		for(int i = 0; i < Nodes.size() && !found; i++)
 		{//Check the nodes for the persons name who left.
-			if(input.equals(Nodes.get(i).name))//Once found, delete his node.
+			if(nodes_txt[1].equals(Nodes.get(i).name))//Once found, delete his node.
 			{
 				found = true;
 				Nodes.remove(i);//Remove the Node.
