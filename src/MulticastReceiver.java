@@ -5,11 +5,11 @@
  */
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -76,8 +76,11 @@ public class MulticastReceiver implements Runnable
 		
 		/*
 			Firstly, an UPDATE command is sent to the multicast group
-			If there are users already connected, an UPDATE command should be returned
-			If this program receives an UPDATE command it should set isConnected to true
+			If there are users already connected, an UPDATE|ACK command should be returned
+			If this program receives an UPDATE|ACK command it will then create a boolean set
+			to record which nodes it has received an ACK from.
+			
+			When all UPDATE|ACK commands are received, isConnected is set to true
 			
 			If the username entered is already in use, a REJECT command should be used
 			
@@ -93,16 +96,16 @@ public class MulticastReceiver implements Runnable
 		
 		try {
 			while (true) {
-				System.out.println("Waiting Receiver.");
+				MulticastPeer.printDebug("Waiting Receiver.");
 				
 				// receive message from client
 				buffer = new byte[MAX_BUFFER];
 				packet = new DatagramPacket(buffer, buffer.length);
 				socket.receive(packet);
-				msg= new String(buffer, MulticastPeer.HEADER_SIZE, packet.getLength());
+				msg= new String(buffer, MulticastPeer.HEADER_SIZE, buffer[1]);
 				
-				System.out.println("Received: " + msg);
-				System.out.println("From: " + packet.getAddress() + ":" + packet.getPort());
+				MulticastPeer.printDebug("Received: " + msg);
+				MulticastPeer.printDebug("From: " + packet.getAddress() + ":" + packet.getPort());
 				
 				if (msg.equalsIgnoreCase("Date?")) {
 					// send reply to everyone
@@ -110,52 +113,75 @@ public class MulticastReceiver implements Runnable
 					buffer = msg.getBytes();
 					packet = new DatagramPacket(buffer, buffer.length, 
 							address, port);
-					System.out.println("Sending: " + new String(buffer));
+					MulticastPeer.printDebug("Sending: " + new String(buffer));
 					socket.send(packet);
 				}
 				
-				//Depending on the header of the msg, do one of the below:
-				switch((int)(buffer[0])){
-				case ((int)MulticastPeer.ACK):
-					System.out.print("ACK received.\n");
-					break;
+				
+				//Check if the packet was sent by this program
+				//if (!packet.getAddress().toString().equals(MulticastPeer.MyNode.ipaddress))
+				{	
+					//
+					//Depending on the header of the msg, do one of the below:
+					//
 					
-				case ((int)MulticastPeer.TEST):
-					SendACK();//A request has been sent to send out an ACK to test connection.
-					System.out.print("TEST.\n");
-					break;
-					
-				case ((int)MulticastPeer.REJECT):
-					ChangeName(msg);//After sending out a test for the name, send a rejection as the name has been taken.
-					System.out.print("REJECT.\n");
-					break;
-					
-				case ((int)MulticastPeer.LEAVE):
-					MulticastPeer.DeleteNode(msg);//Delete a persons Node as they have left the group.
-					System.out.print("LEAVE.\n");
-					break;
-					
-				case ((int)MulticastPeer.UPDATE):
-					if(JoiningUpdate(msg))//description below.
-						Update(msg);//Update the NodeList.
-					System.out.print("UPDATE.\n");
-					break;
-					
-				case ((int)MulticastPeer.REQUEST):
-					System.out.print("REQUEST.\n");
-					break;
-					
-				default:
-					System.out.print("Not a valid command. Error has occured. (Blame Troy)\n(He'll tell you to blame Jason (You really should))\n");
-					break;
+					if ((buffer[0] & MulticastPeer.TEST) == MulticastPeer.TEST)
+					{
+						if (!((buffer[0] & MulticastPeer.ACK) == MulticastPeer.ACK))
+							MulticastPeer.sender.queueMessage(MulticastPeer.ACK, null);//A request has been sent to send out an ACK to test connection.
+						
+						String name = MulticastPeer.findUsername(packet.getAddress().toString());
+						
+						System.out.println(name + ": " + msg);
+						MulticastPeer.printDebug("TEST.\n");
+					}
+					else if ((buffer[0] & MulticastPeer.CHAT) == MulticastPeer.CHAT)
+					{
+						MulticastPeer.printDebug("CHAT.\n");
+						if (!((buffer[0] & MulticastPeer.ACK) == MulticastPeer.ACK))
+						{
+							MulticastPeer.sender.queueMessage(MulticastPeer.ACK | MulticastPeer.CHAT, null);//A request has been sent to send out an ACK to test connection.
+							String name = MulticastPeer.findUsername(packet.getAddress().toString());
+							
+							System.out.println(name + ": " + msg);
+						}
+					}
+					else if ((buffer[0] & MulticastPeer.REJECT) == MulticastPeer.REJECT)
+					{
+						ChangeName(msg);//After sending out a test for the name, send a rejection as the name has been taken.
+						MulticastPeer.printDebug("REJECT.\n");
+					}
+					else if ((buffer[0] & MulticastPeer.LEAVE) == MulticastPeer.LEAVE)
+					{
+						MulticastPeer.DeleteNode(msg);//Delete a persons Node as they have left the group.
+						MulticastPeer.printDebug("LEAVE.\n");
+					}
+					else if ((buffer[0] & MulticastPeer.UPDATE) == MulticastPeer.UPDATE)
+					{
+						boolean isACK = ((buffer[0] & MulticastPeer.ACK) == MulticastPeer.ACK);
+						
+						Update(MulticastPeer.stringToNodeList(msg), packet.getAddress(), isACK);//Update the NodeList.
+						
+						MulticastPeer.printDebug("UPDATE.\n");
+					}
+					else if ((buffer[0] & MulticastPeer.REQUEST) == MulticastPeer.REQUEST)
+					{
+						MulticastPeer.printDebug("REQUEST.\n");
+					}
+					else
+					{
+						MulticastPeer.printDebug("Not a valid command. Error has occured. (Blame Troy)\n(He'll tell you to blame Jason (You really should))\n");
+					}
 				}
-					
-			}				
-		} catch(Exception e) {
+			}
+		}
+		catch(Exception e) {
 			e.printStackTrace();
 		}
+		
 	}
 
+/*
 public void SendACK(){
 	
 	try{
@@ -172,13 +198,16 @@ public void SendACK(){
 		e.printStackTrace();
 	}
 }
+*/
 
-public void ChangeName(String input){
+public void ChangeName(String input)
+{
 	//If the chosen name already exists, change it.
 	
 	String[] nodes_txt = input.split(":");
 	
-	if(nodes_txt[0].equals(MulticastPeer.MyNode.ipaddress)){
+	if(nodes_txt[0].equals(MulticastPeer.MyNode.ipaddress))
+	{
 		try{
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		System.out.print("Username: ");
@@ -194,36 +223,57 @@ public void ChangeName(String input){
 	
 }
 
-public boolean JoiningUpdate(String input){
-	/*This method checks if the Update sent is a person requesting to join.
-	 * If the person is trying to take your name, then send a REJECT.
-	 */
-	try{
-	String[] nodes_txt = input.split(":");
-	if(nodes_txt.length == 2)
-	{//If only one person joining then check, otherwise it's just a normal update.
-		if(!nodes_txt[0].equals(MulticastPeer.MyNode.ipaddress) && nodes_txt[1].equals(MulticastPeer.MyNode.name))
-		{//If the message is from someone trying to take your name, then reject them.
-			byte[] buffer = new byte[1];
-			buffer[0] = MulticastPeer.REJECT;
-			DatagramPacket packet = new DatagramPacket(buffer, buffer.length);//Create a packet
-			socket.send(packet);
-			return false;
-		}
-	}
-	}catch(Exception e){
-		e.printStackTrace();
-	}
+	public void Update(ArrayList<Node> newNodeList, InetAddress senderIpAddress, boolean isACK){//Update the NodeList
 		
-	return true;
-}
-
-public void Update(String message){//Update the NodeList
-	
-	try{
-		if(!message.equals(MulticastPeer.getNodeList()))
-		{//If the message sent does not match the the Node list that you have, then update your list.
-			MulticastPeer.mergeLists(MulticastPeer.stringToNodeList(message));
+		if(newNodeList.size() == 1 && newNodeList.get(0).ipaddress.equals(""))
+		{
+			//If only one node is in the list, the person is joining, otherwise it's just a normal update.
+			
+			if (newNodeList.get(0).name.equals(MulticastPeer.MyNode.name))
+			{
+				if (MulticastPeer.MyNode.ipaddress.equals(""))
+				{
+					//In this case, I am the one who is joining
+					MulticastPeer.MyNode.ipaddress = senderIpAddress.toString();
+					for (int i = 0; i < MulticastPeer.Nodes.size(); i++)
+					{
+						if (MulticastPeer.Nodes.get(i).name.equals(MulticastPeer.MyNode.name))
+						{
+							MulticastPeer.Nodes.set(i, MulticastPeer.MyNode);
+						}
+					}
+				}
+				else if(!newNodeList.get(0).ipaddress.equals(MulticastPeer.MyNode.ipaddress))
+				{
+					//If the message is from someone trying to take your name, then reject them.
+					MulticastPeer.sender.queueMessage(MulticastPeer.REJECT, null);
+				}
+			}
+			else
+			{
+				newNodeList.get(0).ipaddress = senderIpAddress.toString();
+				
+				MulticastPeer.mergeLists(newNodeList);
+				
+				if (!isACK)
+					MulticastPeer.sender.queueMessage((byte)(MulticastPeer.ACK | MulticastPeer.UPDATE), MulticastPeer.getNodeList());
+			}
+		}
+		//Only receive UPDATE requests when connected
+		if (MulticastPeer.isConnected | isACK)
+		if(MulticastPeer.isDifferentList(newNodeList) )
+		{
+			//If the message sent does not match the Node list that you have, then update your list.
+			
+			MulticastPeer.mergeLists(newNodeList);
+			
+			if (!isACK)
+				MulticastPeer.sender.queueMessage((byte)(MulticastPeer.ACK | MulticastPeer.UPDATE), MulticastPeer.getNodeList());
+			
+			
+			/*
+			 Why do we need to receive ACKs? We just need to queue an update|ack message
+			 
 			byte[] buffer = new byte[MAX_BUFFER];//Craete a buffer.
 			DatagramPacket packet = new DatagramPacket(buffer, buffer.length);//Create a packet
 			
@@ -231,11 +281,9 @@ public void Update(String message){//Update the NodeList
 			for(int i = 1; i < MulticastPeer.Nodes.size(); i++){//i = 1, because it had to receive the first to start this up.
 				//socket.receive(packet);
 			}
+			*/
 			
 		}
-	}catch(Exception e){
-		e.printStackTrace();
 	}
-}
 	
 }
