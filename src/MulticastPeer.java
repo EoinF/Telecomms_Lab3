@@ -234,6 +234,9 @@ public class MulticastPeer {
 	
 	public static boolean isDifferentList(ArrayList<Node> newNodeList)
 	{
+		if (Nodes.size() != newNodeList.size())
+			return true;
+		
 		boolean foundMatch;
 		for (int i = 0; i < Nodes.size(); i++)
 		{
@@ -248,20 +251,30 @@ public class MulticastPeer {
 			
 			if (!foundMatch)
 			{
-				return false;
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
-	public static String findUsername(String ipaddress)
+	public static Node getNodeByAddress(String ipaddress)
 	{
 		for (int i = 0; i < Nodes.size(); i++)
 		{
 			if (Nodes.get(i).ipaddress.equals(ipaddress))
-				return Nodes.get(i).name;
+				return Nodes.get(i);
 		}
-		return "Unknown User";
+		return null;
+	}
+	
+	public static Node getNodeByName(String name)
+	{
+		for (int i = 0; i < Nodes.size(); i++)
+		{
+			if (Nodes.get(i).name.equals(name))
+				return Nodes.get(i);
+		}
+		return null;
 	}
 	
 	public static boolean receivedAllAcks()

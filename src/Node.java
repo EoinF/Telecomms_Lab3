@@ -14,8 +14,8 @@ public class Node
 	
 	public boolean equals(Node n)
 	{
-		return this.name == n.name
+		return this.name.equals(n.name)
 				&&
-				this.ipaddress == n.ipaddress;
+				this.ipaddress.equals(n.ipaddress);
 	}
 }

@@ -124,15 +124,17 @@ public class MulticastReceiver implements Runnable
 					//
 					//Depending on the header of the msg, do one of the below:
 					//
-					
+
+					if ((buffer[0] & MulticastPeer.ACK) == MulticastPeer.ACK)
+					{
+						MulticastPeer.getNodeByAddress(packet.getAddress().toString()).gotAck = true;
+					}
+
 					if ((buffer[0] & MulticastPeer.TEST) == MulticastPeer.TEST)
 					{
 						if (!((buffer[0] & MulticastPeer.ACK) == MulticastPeer.ACK))
-							MulticastPeer.sender.queueMessage(MulticastPeer.ACK, null);//A request has been sent to send out an ACK to test connection.
+							MulticastPeer.sender.sendMessage(MulticastPeer.ACK, null);//A request has been sent to send out an ACK to test connection.
 						
-						String name = MulticastPeer.findUsername(packet.getAddress().toString());
-						
-						System.out.println(name + ": " + msg);
 						MulticastPeer.printDebug("TEST.\n");
 					}
 					else if ((buffer[0] & MulticastPeer.CHAT) == MulticastPeer.CHAT)
@@ -140,9 +142,10 @@ public class MulticastReceiver implements Runnable
 						MulticastPeer.printDebug("CHAT.\n");
 						if (!((buffer[0] & MulticastPeer.ACK) == MulticastPeer.ACK))
 						{
-							MulticastPeer.sender.queueMessage(MulticastPeer.ACK | MulticastPeer.CHAT, null);//A request has been sent to send out an ACK to test connection.
-							String name = MulticastPeer.findUsername(packet.getAddress().toString());
-							
+							MulticastPeer.sender.sendMessage(MulticastPeer.ACK | MulticastPeer.CHAT, null);//A request has been sent to send out an ACK to test connection.
+
+							String name = MulticastPeer.getNodeByAddress(packet.getAddress().toString()).name;
+								
 							System.out.println(name + ": " + msg);
 						}
 					}
@@ -162,6 +165,8 @@ public class MulticastReceiver implements Runnable
 						
 						Update(MulticastPeer.stringToNodeList(msg), packet.getAddress(), isACK);//Update the NodeList.
 						
+						
+						System.out.println(MulticastPeer.getNodeList());
 						MulticastPeer.printDebug("UPDATE.\n");
 					}
 					else if ((buffer[0] & MulticastPeer.REQUEST) == MulticastPeer.REQUEST)
@@ -229,46 +234,39 @@ public void ChangeName(String input)
 		{
 			//If only one node is in the list, the person is joining, otherwise it's just a normal update.
 			
+			
 			if (newNodeList.get(0).name.equals(MulticastPeer.MyNode.name))
 			{
-				if (MulticastPeer.MyNode.ipaddress.equals(""))
-				{
-					//In this case, I am the one who is joining
-					MulticastPeer.MyNode.ipaddress = senderIpAddress.toString();
-					for (int i = 0; i < MulticastPeer.Nodes.size(); i++)
-					{
-						if (MulticastPeer.Nodes.get(i).name.equals(MulticastPeer.MyNode.name))
-						{
-							MulticastPeer.Nodes.set(i, MulticastPeer.MyNode);
-						}
-					}
-				}
-				else if(!newNodeList.get(0).ipaddress.equals(MulticastPeer.MyNode.ipaddress))
-				{
-					//If the message is from someone trying to take your name, then reject them.
-					MulticastPeer.sender.queueMessage(MulticastPeer.REJECT, null);
-				}
-			}
-			else
-			{
-				newNodeList.get(0).ipaddress = senderIpAddress.toString();
+				//It is my own joining message
+				MulticastPeer.MyNode.ipaddress = senderIpAddress.toString();
 				
+				MulticastPeer.getNodeByName(MulticastPeer.MyNode.name).ipaddress = MulticastPeer.MyNode.ipaddress;
+			}
+			else if(MulticastPeer.getNodeByName(newNodeList.get(0).name) == null || !MulticastPeer.isConnected)
+			{
+				//If the name doesn't exist already or we aren't connected yet
+				newNodeList.get(0).ipaddress = senderIpAddress.toString();
 				MulticastPeer.mergeLists(newNodeList);
 				
 				if (!isACK)
-					MulticastPeer.sender.queueMessage((byte)(MulticastPeer.ACK | MulticastPeer.UPDATE), MulticastPeer.getNodeList());
+					MulticastPeer.sender.sendMessage(MulticastPeer.ACK | MulticastPeer.UPDATE, MulticastPeer.getNodeList());
+			}
+			else
+			{
+				//If the message is from someone trying to take your name, then reject them.
+				MulticastPeer.sender.queueMessage(MulticastPeer.REJECT, null);
 			}
 		}
 		//Only receive UPDATE requests when connected
-		if (MulticastPeer.isConnected | isACK)
-		if(MulticastPeer.isDifferentList(newNodeList) )
+		else if ((MulticastPeer.isConnected | isACK)
+			&& MulticastPeer.isDifferentList(newNodeList))
 		{
 			//If the message sent does not match the Node list that you have, then update your list.
 			
 			MulticastPeer.mergeLists(newNodeList);
 			
 			if (!isACK)
-				MulticastPeer.sender.queueMessage((byte)(MulticastPeer.ACK | MulticastPeer.UPDATE), MulticastPeer.getNodeList());
+				MulticastPeer.sender.sendMessage((MulticastPeer.ACK | MulticastPeer.UPDATE), MulticastPeer.getNodeList());
 			
 			
 			/*

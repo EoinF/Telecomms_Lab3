@@ -86,7 +86,8 @@ public class MulticastSender implements Runnable
 		//First connect to the multicast group
 		//
 		MulticastPeer.printDebug("Attempting to connect to the multicast group...");
-		queueMessage(MulticastPeer.UPDATE, MulticastPeer.getNodeList());
+		sendMessage(MulticastPeer.UPDATE, MulticastPeer.getNodeList());
+		timeout = DEFAULT_TIMEOUT;
 		int connectionAttempts = 0;
 		
 		while(true)
@@ -114,14 +115,15 @@ public class MulticastSender implements Runnable
 					System.out.println("Received all ACKs!");
 				if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS //If the max attempts have been reached
 						//Or all ACKs have been received(Can't be 0 ACKs or this node may think it has connected to an empty group)
-					|| (MulticastPeer.receivedAllAcks() && MulticastPeer.Nodes.size() > 1))
+					|| (MulticastPeer.receivedAllAcks() && MulticastPeer.Nodes.size() > 1)
+					&& !MulticastPeer.MyNode.ipaddress.equals(""))
 				{
 						MulticastPeer.isConnected = true;
 				}
 				else
 				{
 					connectionAttempts++;
-					queueMessage(MulticastPeer.UPDATE, MulticastPeer.getNodeList());
+					sendMessage(MulticastPeer.UPDATE, MulticastPeer.getNodeList());
 				}
 			}
 			
@@ -152,11 +154,30 @@ public class MulticastSender implements Runnable
 			
 		}
 	}
-	
-	
-	/*
+
+	/**
 	 * 
+	 * @param flags The bits in the header that represent ACK, UPDATE, REJECT, etc.
+	 * @param data The actual contents of the message
 	 */
+	public void sendMessage(int flags, String data)
+	{
+		byte[] databuffer;
+
+		if (data == null)
+			databuffer = new byte[0];
+		else
+			databuffer = data.getBytes();
+		byte[] buffer = new byte[MulticastPeer.HEADER_SIZE + databuffer.length];
+		
+		buffer[0] = (byte)flags;
+		
+		buffer[1] = (byte)databuffer.length;
+		java.lang.System.arraycopy(databuffer, 0, buffer, MulticastPeer.HEADER_SIZE, databuffer.length);
+
+		sendMessage(buffer);
+	}
+	
 	private void sendMessage(byte[] buffer)
 	{
 		try
