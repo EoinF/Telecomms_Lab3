@@ -35,15 +35,16 @@ public class MulticastPeer {
 	 * @param args 	[0] IP address the client should send to 
 	 * 				[1] Port number the client should send to
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args)                                                                                    
+	{
 		int port = 0;
 		String address = "";
 		Nodes = new ArrayList<Node>();
 		
 		System.out.println("Program start");
-		try 
+		try
 		{
-			if (args.length == 2) 
+			if (args.length == 2)
 			{
 				address = args[0];
 				port = Integer.parseInt(args[1]);
